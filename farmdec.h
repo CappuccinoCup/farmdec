@@ -1006,6 +1006,9 @@ extern "C" {
 	farmdec::FPSize fad_get_prec(u8 flags);
 	farmdec::FPSize fad_size_from_vec_arrangement(farmdec::VectorArrangement);
 	int fad_decode(u32 *in, uint n, farmdec::Inst *out);
+#ifdef CC_PROFILE_DUMPIN
+	void fad_print(farmdec::Inst *inst);
+#endif
 }
 #else
 	Cond fad_get_cond(u8 flags);
@@ -1015,6 +1018,9 @@ extern "C" {
 	FPSize fad_get_prec(u8 flags);
 	FPSize fad_size_from_vec_arrangement(VectorArrangement);
 	int fad_decode(u32 *in, uint n, Inst *out);
+#ifdef CC_PROFILE_DUMPIN
+	void fad_print(Inst *inst);
+#endif
 #endif
 
 #ifndef FARMDEC_INTERNAL

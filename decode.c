@@ -4,6 +4,11 @@
 #define FARMDEC_INTERNAL 1
 #include "farmdec.h"
 
+#ifdef CC_PROFILE_DUMPIN
+#include <stdio.h>
+#include "mnemonics.h"
+#endif
+
 static Inst UNKNOWN_INST = {
 	op: A64_UNKNOWN,
 	// all other fields: zero
@@ -2882,3 +2887,36 @@ int fad_decode(u32 *in, uint n, Inst *out) {
 	}
 	return i;
 }
+
+#ifdef CC_PROFILE_DUMPIN
+void fad_print(Inst *inst) {
+	char regch = (inst->flags & W32) ? 'W' : 'X';
+	char flagsch = (inst->flags & SET_FLAGS) ? 'S' : ' ';
+
+	switch (inst->op) {
+	case A64_UNKNOWN: {
+		u32 binst = inst->imm;
+
+		// Print unknown instruction as little-endian hex bytes. This format
+		// can be used by the Online Disassembler (ODA).
+		fprintf(stderr, "??? %02x %02x %02x %02x\n", (binst>>0) & 0xff, (binst>>8) & 0xff,
+			(binst>>16) & 0xff, (binst>>24) & 0xff);
+		return;
+	}
+	case A64_ERROR:   fprintf(stderr, "error \"%s\"\n", inst->error); return;
+	case A64_UDF:     fprintf(stderr, "udf\n");                      return;
+	default:
+		break; // normal instruction
+	}
+
+	// We do not disambiguate here -- all instructions are printed
+	// the same; for example, instructions with two immediates have
+	// the imm field printed too.
+	fprintf(stderr, "%-12s %c %c%d, %c%d, %c%d, imm=%lu, offset=%+ld, fimm=%f, imm2=(%u,%u), flags=0b %o%o%o %o%o%o %o%o\n",
+		mnemonics[inst->op], flagsch,
+		regch, inst->rd, regch, inst->rn, regch, inst->rm,
+		inst->imm, inst->offset, inst->fimm, inst->bfm.lsb, inst->bfm.width,
+		(inst->flags>>7) & 1, (inst->flags>>6) & 1, (inst->flags>>5) & 1, (inst->flags>>4) & 1,
+		(inst->flags>>3) & 1, (inst->flags>>2) & 1, (inst->flags>>1) & 1, (inst->flags>>0) & 1);
+}
+#endif
